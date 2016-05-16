@@ -182,7 +182,7 @@ void rectdraw() {
         }
     }
 
-    char *c = "ffmpeg -f alsa -ac 2 -i pulse -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
+    char *c = "ffmpeg -f alsa -i hw:1 -t 30 -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
     XVisualInfo vinfo;
     XMatchVisualInfo(d, DefaultScreen(d), 32, TrueColor, &vinfo);
     Colormap cm = XCreateColormap(d, root, vinfo.visual, AllocNone);
