@@ -27,6 +27,10 @@ typedef struct _txf_grctx {
     unint height;
 } _txf_grctx;
 
+typedef enum {
+    NONE, PULSE, ALSA
+} SOUND_RECORD;
+
 unsigned long alphaset(unsigned long color, uint8_t alpha) {
     uint32_t mod = alpha;
     mod <<= 24;
@@ -82,9 +86,22 @@ unsigned long getcolor(GRAPHICS g, const char *colstr) {
 }
 
 
-void rectdraw();
-int main() {
-    rectdraw();
+
+void rectdraw(SOUND_RECORD record_status);
+int main(int argc, char **argv) {
+    if (argc == 1) {
+        // no sound
+        rectdraw(NONE);
+    }
+    else if (argc == 2) {
+        if (!strcmp(argv[1], "pulse")) {
+            rectdraw(PULSE);
+        } else if (!strcmp(argv[1], "alsa")) {
+            rectdraw(ALSA);
+        }
+    } else {
+        perror("not implemented");
+    }
 }
 
 char** split_args(char* buffer) {
@@ -151,7 +168,7 @@ int mstime() {
     return time.tv_sec;
 }
 
-void rectdraw() {
+void rectdraw(SOUND_RECORD rec_status) {
     Display *d = XOpenDisplay(NULL);
     Window root = XDefaultRootWindow(d);
 
@@ -181,8 +198,22 @@ void rectdraw() {
             puts("grab frozen");
         }
     }
-
-    char *c = "ffmpeg -f alsa -i hw:1 -t 30 -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
+    char *no_sound = "ffmpeg -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
+    char *alsa_sound = "ffmpeg -f alsa -i hw:0 -t 30 -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
+    char *pulse_sound = "ffmpeg -f alsa -ac 2 -i pulse -video_size %ix%i -f x11grab -i :0.0+%i,%i recording_%i.mp4";
+    
+    char *c = NULL;
+    switch(rec_status) {
+        case NONE:
+            c = no_sound; break;
+        case PULSE:
+            c = pulse_sound; break;
+        case ALSA:
+            c = alsa_sound; break;
+        default:
+            exit(1);
+    }
+    
     XVisualInfo vinfo;
     XMatchVisualInfo(d, DefaultScreen(d), 32, TrueColor, &vinfo);
     Colormap cm = XCreateColormap(d, root, vinfo.visual, AllocNone);
